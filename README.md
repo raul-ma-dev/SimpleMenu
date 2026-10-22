@@ -45,7 +45,7 @@ La aplicación incluye tres secciones:
 - **Nuevo pedido:** usa + y − para elegir cantidades y confirma con Cerrar pedido. Solo los pedidos confirmados cuentan como ventas.
 - **Ventas:** consulta pedidos y total por fecha. La fecha se toma del dispositivo al confirmar la venta.
 
-Los precios se calculan con centavos enteros. Cada venta conserva el nombre, precio y cantidad originales, aunque cambie el catálogo. Los productos y las ventas se guardan localmente (SharedPreferences en Android y NSUserDefaults en iOS). El pedido abierto permanece en memoria: confirma la venta antes de cerrar la aplicación. No hay sincronización entre dispositivos ni exportación en esta versión. Los importes se muestran con el símbolo $.
+Los precios se calculan con centavos enteros. Cada venta conserva el nombre, precio y cantidad originales, aunque cambie el catálogo. Los productos y las ventas se guardan localmente (SharedPreferences en Android y NSUserDefaults en iOS). El pedido abierto permanece en memoria: confirma la venta antes de cerrar la aplicación. No hay sincronización entre dispositivos. Los reportes diarios se pueden exportar y compartir en CSV. Los importes se muestran con el símbolo $.
 
 Validación Android:
 
@@ -64,3 +64,9 @@ Productos y Nuevo pedido permiten elegir primero la categoría y después la sub
 Agregar foto abre la galería del dispositivo. Puedes cambiar o quitar la foto antes de guardar. La app importa una copia JPEG de hasta 640 × 640 píxeles al almacenamiento privado; no depende de acceso permanente a la imagen original. Se aceptan imágenes de hasta 20 MB. Cancelar descarta la foto nueva; reemplazarla o eliminar el producto limpia la copia que ya no se usa. Las ventas anteriores no se modifican.
 
 La selección e importación de fotos usa [FileKit](https://github.com/vinceglb/FileKit).
+
+### Edición y exportación de ventas
+
+En Ventas, cada pedido cerrado ofrece Editar y Eliminar. Editar permite corregir nombres, precios y cantidades, quitar artículos o agregar otros del catálogo. Los precios originales se conservan hasta que se cambien explícitamente. Guardar actualiza esa venta en su fecha original y recalcula el total diario; Cancelar descarta el borrador. Eliminar pide confirmación y conserva las demás ventas y el catálogo.
+
+Exportar día (CSV) permite elegir un destino para guardar el reporte de la fecha seleccionada. Compartir día abre el menú nativo para elegir la aplicación y el destinatario. El archivo incluye artículos, cantidades, precios unitarios, subtotales por pedido, número de pedidos y total del día. Los reportes reflejan las ediciones y eliminaciones guardadas antes de exportar. Se usa UTF-8 con BOM para conservar acentos en Excel. Compartir prepara una copia temporal en la caché de la app; la aplicación de destino decide cómo enviarla.

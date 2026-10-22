@@ -32,6 +32,7 @@ fun App() {
     val scope = rememberCoroutineScope()
     val photoEditor = remember(scope) { ProductPhotoEditor(scope) }
     val pickPhoto = rememberProductPhotoPicker(photoEditor, showEditor)
+    val dailyReport = rememberDailyReportActions()
     fun openEditor(product: Product?) {
         editing = product
         photoEditor.open(product?.photo)
@@ -41,8 +42,8 @@ fun App() {
         if (!photoEditor.busy) { photoEditor.discard(); showEditor = false }
     }
     fun save(next: ShopData): Boolean = try {
-        storage.write(next.encode()); data = next; true
-    } catch (_: Exception) { error = "No se pudo guardar. Intenta de nuevo; el pedido sigue abierto."; false }
+        storage.write(next.encode()); data = next; error = null; true
+    } catch (_: Exception) { error = "No se pudieron guardar los cambios. Intenta de nuevo."; false }
     val shop = data ?: ShopData()
     val lines = shop.products.mapNotNull { p -> cart[p.id]?.takeIf { it > 0 }?.let { SaleLine(p.name, p.cents, it) } }
     MaterialTheme(colorScheme = lightColorScheme(primary = Color(0xFF146C59), secondary = Color(0xFF55645D), background = Color(0xFFF7F9F6))) {
@@ -54,6 +55,20 @@ fun App() {
                 }
             }
         }) { padding ->
+            if (tab == 1) {
+                NewOrderScreen(
+                    products = shop.products,
+                    cart = cart,
+                    enabled = data != null,
+                    error = error,
+                    notice = notice,
+                    onQuantityChange = { product, quantity ->
+                        cart = if (quantity <= 0) cart - product.id else cart + (product.id to quantity.coerceAtMost(999))
+                    },
+                    onCloseOrder = { closing = true },
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                )
+            } else {
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Spacer(Modifier.height(8.dp))
                 Text("Simple Menu", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
@@ -74,55 +89,19 @@ fun App() {
                             )
                         }
                     }
-                    1 -> {
-                        Text("Nuevo pedido", style = MaterialTheme.typography.headlineSmall)
-                        if (shop.products.isEmpty()) Text("Primero agrega productos en la sección Productos.")
-                        val changeQuantity: (Product, Int) -> Unit = { product, quantity ->
-                            cart = if (quantity <= 0) cart - product.id else cart + (product.id to quantity.coerceAtMost(999))
-                        }
-                        ProductBrowser(shop.products, categoryButtons = true) { filtered ->
-                            OrderProductGrid(filtered, cart, onQuantityChange = changeQuantity)
-                        }
-                        if (lines.isNotEmpty()) {
-                            Text("Pedido actual", style = MaterialTheme.typography.titleMedium)
-                            OrderProductGrid(
-                                products = shop.products.filter { (cart[it.id] ?: 0) > 0 },
-                                cart = cart,
-                                compact = true,
-                                onQuantityChange = changeQuantity,
-                            )
-                        }
-                        Text("${lines.sumOf { it.quantity }} artículos · Total ${money(lines.sumOf { it.total })}", style = MaterialTheme.typography.titleLarge)
-                        Button(onClick = { closing = true }, enabled = lines.isNotEmpty() && data != null, modifier = Modifier.fillMaxWidth()) { Text("Cerrar pedido") }
-                    }
                     2 -> {
-                        Text("Ventas por día", style = MaterialTheme.typography.headlineSmall)
-                        val days = (shop.sales.map { it.day } + storage.today()).distinct().sortedDescending()
-                        var expanded by remember { mutableStateOf(false) }
-                        Box {
-                            OutlinedButton(onClick = { expanded = true }) { Text("Fecha: $selectedDay ▾") }
-                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                days.forEach { day -> DropdownMenuItem(text = { Text(day) }, onClick = { selectedDay = day; expanded = false }) }
-                            }
-                        }
-                        val sales = shop.sales.filter { it.day == selectedDay }
-                        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(20.dp)) {
-                            Text("Total del día")
-                            Text(money(sales.sumOf { it.total }), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                            Text("${sales.size} pedidos · ${sales.sumOf { s -> s.lines.sumOf { it.quantity } }} artículos")
-                        } }
-                        if (sales.isEmpty()) Text("Todavía no hay ventas registradas en esta fecha.")
-                        sales.asReversed().forEach { sale ->
-                            Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text("Pedido #${sale.id}", fontWeight = FontWeight.Bold)
-                                sale.lines.forEach { Text("${it.quantity} × ${it.name} · ${money(it.cents)} = ${money(it.total)}") }
-                                HorizontalDivider()
-                                Text("Total ${money(sale.total)}", fontWeight = FontWeight.Bold)
-                            } }
-                        }
+                        SalesSection(
+                            shop = shop,
+                            today = storage.today(),
+                            selectedDay = selectedDay,
+                            onDayChange = { selectedDay = it },
+                            onSave = { save(it) },
+                            report = dailyReport,
+                        )
                     }
                 }
                 Spacer(Modifier.height(16.dp))
+            }
             }
         }
         if (showEditor) {
