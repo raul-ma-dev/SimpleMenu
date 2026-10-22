@@ -60,7 +60,7 @@ private fun ProductTile(
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    Card(modifier) {
+    AppCard(modifier) {
         ProductPhoto(product.photo, product.name, Modifier.fillMaxWidth().aspectRatio(1.3f))
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(product.name, fontWeight = FontWeight.Bold, maxLines = 2, minLines = 2, overflow = TextOverflow.Ellipsis)

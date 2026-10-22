@@ -23,7 +23,26 @@ data class SaleLine(val name: String, val cents: Long, val quantity: Int) {
 data class Sale(val id: Long, val day: String, val lines: List<SaleLine>) {
     val total get() = lines.sumOf { it.total }
 }
-data class ShopData(val products: List<Product> = emptyList(), val sales: List<Sale> = emptyList())
+data class AppAppearance(
+    val businessName: String = "Simple Menu",
+    val logo: String? = null,
+    val primary: Long = 0x146C59,
+    val secondary: Long = 0x55645D,
+    val background: Long = 0xF7F9F6,
+    val cardBackground: Long? = null,
+    val textColor: Long? = null,
+    val navigationBackground: Long? = null,
+)
+
+fun parseHexColor(text: String): Long? = text.trim().removePrefix("#")
+    .takeIf { Regex("[a-fA-F0-9]{6}").matches(it) }?.toLongOrNull(16)
+fun hexColor(value: Long): String = "#${value.toString(16).uppercase().padStart(6, '0')}"
+
+data class ShopData(
+    val products: List<Product> = emptyList(),
+    val sales: List<Sale> = emptyList(),
+    val appearance: AppAppearance = AppAppearance(),
+)
 interface ShopStorage {
     fun read(): String
     fun write(value: String)
@@ -42,6 +61,7 @@ fun parsePrice(text: String): Long? {
 private fun String.pack() = map { it.code.toString(16).padStart(4, '0') }.joinToString("")
 private fun String.unpack() = chunked(4).map { it.toInt(16).toChar() }.joinToString("")
 fun ShopData.encode(): String = buildList {
+    add("C|${appearance.businessName.pack()}|${(appearance.logo ?: "").pack()}|${hexColor(appearance.primary)}|${hexColor(appearance.secondary)}|${hexColor(appearance.background)}|${appearance.cardBackground?.let(::hexColor) ?: ""}|${appearance.textColor?.let(::hexColor) ?: ""}|${appearance.navigationBackground?.let(::hexColor) ?: ""}")
     products.forEach { add("P|${it.id}|${it.name.pack()}|${it.cents}|${it.category.pack()}|${it.subcategory.pack()}|${(it.photo ?: "").pack()}") }
     sales.forEach { sale ->
         add("S|${sale.id}|${sale.day}")
@@ -51,10 +71,21 @@ fun ShopData.encode(): String = buildList {
 fun decodeShop(text: String): ShopData {
     val products = mutableListOf<Product>()
     val sales = mutableListOf<Sale>()
+    var appearance = AppAppearance()
     if (text.isBlank()) return ShopData()
     text.lines().filter { it.isNotBlank() }.forEach { row ->
         val p = row.split('|')
         when (p[0]) {
+            "C" -> appearance = AppAppearance(
+                businessName = p[1].unpack().ifBlank { "Simple Menu" },
+                logo = p[2].unpack().takeIf { it.isNotBlank() },
+                primary = requireNotNull(parseHexColor(p[3])),
+                secondary = requireNotNull(parseHexColor(p[4])),
+                background = requireNotNull(parseHexColor(p[5])),
+                cardBackground = p.getOrNull(6)?.takeIf { it.isNotBlank() }?.let { requireNotNull(parseHexColor(it)) },
+                textColor = p.getOrNull(7)?.takeIf { it.isNotBlank() }?.let { requireNotNull(parseHexColor(it)) },
+                navigationBackground = p.getOrNull(8)?.takeIf { it.isNotBlank() }?.let { requireNotNull(parseHexColor(it)) },
+            )
             "P" -> products.add(Product(
                 p[1].toLong(), p[2].unpack(), p[3].toLong(),
                 p.getOrNull(4)?.unpack() ?: "",
@@ -66,5 +97,5 @@ fun decodeShop(text: String): ShopData {
             else -> error("Formato de datos desconocido")
         }
     }
-    return ShopData(products, sales)
+    return ShopData(products, sales, appearance)
 }

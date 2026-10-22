@@ -7,8 +7,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -32,6 +30,8 @@ fun App() {
     val scope = rememberCoroutineScope()
     val photoEditor = remember(scope) { ProductPhotoEditor(scope) }
     val pickPhoto = rememberProductPhotoPicker(photoEditor, showEditor)
+    val logoEditor = remember(scope) { ProductPhotoEditor(scope, logo = true) }
+    val pickLogo = rememberProductPhotoPicker(logoEditor, tab == 3)
     val dailyReport = rememberDailyReportActions()
     fun openEditor(product: Product?) {
         editing = product
@@ -46,17 +46,21 @@ fun App() {
     } catch (_: Exception) { error = "No se pudieron guardar los cambios. Intenta de nuevo."; false }
     val shop = data ?: ShopData()
     val lines = shop.products.mapNotNull { p -> cart[p.id]?.takeIf { it > 0 }?.let { SaleLine(p.name, p.cents, it) } }
-    MaterialTheme(colorScheme = lightColorScheme(primary = Color(0xFF146C59), secondary = Color(0xFF55645D), background = Color(0xFFF7F9F6))) {
+    CompositionLocalProvider(LocalAppAppearance provides shop.appearance) {
+    MaterialTheme(colorScheme = appearanceColorScheme(shop.appearance)) {
         Scaffold(bottomBar = {
-            NavigationBar {
-                listOf("Productos", "Nuevo pedido", "Ventas").forEachIndexed { index, title ->
-                    NavigationBarItem(selected = tab == index, onClick = { tab = index; if (index == 2) selectedDay = storage.today() },
-                        icon = { Text(listOf("▦", "+", "$ ")[index]) }, label = { Text(title) })
-                }
+            AppNavigationBar(shop.appearance, selected = tab) { index ->
+                        if (index != tab) {
+                            if (tab == 3) logoEditor.discard()
+                            if (index == 3) logoEditor.open(shop.appearance.logo)
+                            tab = index
+                        }
+                        if (index == 2) selectedDay = storage.today()
             }
         }) { padding ->
             if (tab == 1) {
                 NewOrderScreen(
+                    appearance = shop.appearance,
                     products = shop.products,
                     cart = cart,
                     enabled = data != null,
@@ -71,7 +75,7 @@ fun App() {
             } else {
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Spacer(Modifier.height(8.dp))
-                Text("Simple Menu", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                BusinessHeader(shop.appearance)
                 Text("El control de tu negocio, al día", color = MaterialTheme.colorScheme.secondary)
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 notice?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
@@ -97,6 +101,19 @@ fun App() {
                             onDayChange = { selectedDay = it },
                             onSave = { save(it) },
                             report = dailyReport,
+                        )
+                    }
+                    3 -> {
+                        AppearanceSection(
+                            saved = shop.appearance,
+                            logoEditor = logoEditor,
+                            pickLogo = pickLogo,
+                            enabled = data != null,
+                            onSave = { appearance ->
+                                val saved = save(shop.copy(appearance = appearance))
+                                if (saved) logoEditor.commit()
+                                saved
+                            },
                         )
                     }
                 }
@@ -149,5 +166,6 @@ fun App() {
             else closing = false
         }) { Text("Confirmar venta") } }, dismissButton = { TextButton(onClick = { closing = false }) { Text("Seguir editando") } })
         deleting?.let { product -> AlertDialog(onDismissRequest = { deleting = null }, title = { Text("Eliminar producto") }, text = { Text("¿Eliminar ${product.name}? Sus ventas anteriores se conservarán.") }, confirmButton = { TextButton(onClick = { if (save(shop.copy(products = shop.products.filter { it.id != product.id }))) { scope.launch { deleteProductPhoto(product.photo) }; deleting = null } }) { Text("Eliminar") } }, dismissButton = { TextButton(onClick = { deleting = null }) { Text("Cancelar") } }) }
+    }
     }
 }

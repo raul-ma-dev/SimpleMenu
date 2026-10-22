@@ -18,7 +18,7 @@ import kotlin.uuid.Uuid
 
 // Store only a relative filename: the iOS sandbox location can change between launches.
 private fun photoFile(reference: String): PlatformFile {
-    require(Regex("product-[a-f0-9-]+\\.jpg").matches(reference))
+    require(Regex("(product-[a-f0-9-]+\\.jpg|logo-[a-f0-9-]+\\.png)").matches(reference))
     return FileKit.filesDir / reference
 }
 
@@ -33,7 +33,10 @@ suspend fun deleteProductPhoto(reference: String?) {
     }
 }
 
-class ProductPhotoEditor(private val scope: CoroutineScope) {
+class ProductPhotoEditor(
+    private val scope: CoroutineScope,
+    private val logo: Boolean = false,
+) {
     var photo by mutableStateOf<String?>(null)
         private set
     var busy by mutableStateOf(value = false)
@@ -79,8 +82,8 @@ class ProductPhotoEditor(private val scope: CoroutineScope) {
                     require(file.size() <= 20L * 1024 * 1024) { "La foto debe pesar menos de 20 MB." }
                     val bytes = file.readBytes()
                     require(bytes.size <= 20 * 1024 * 1024) { "La foto debe pesar menos de 20 MB." }
-                    val compressed = FileKit.compressImage(bytes, quality = 85, maxWidth = 640, maxHeight = 640, imageFormat = ImageFormat.JPEG)
-                    val name = "product-${Uuid.random()}.jpg"
+                    val compressed = FileKit.compressImage(bytes, quality = 85, maxWidth = 640, maxHeight = 640, imageFormat = if (logo) ImageFormat.PNG else ImageFormat.JPEG)
+                    val name = if (logo) "logo-${Uuid.random()}.png" else "product-${Uuid.random()}.jpg"
                     created = name
                     photoFile(name).write(compressed)
                     name
@@ -116,7 +119,13 @@ fun rememberProductPhotoPicker(editor: ProductPhotoEditor, active: Boolean): () 
 }
 
 @Composable
-fun ProductPhoto(reference: String?, name: String, modifier: Modifier = Modifier) {
+fun ProductPhoto(
+    reference: String?,
+    name: String,
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop,
+    description: String = "Foto de $name",
+) {
     var bitmap by remember(reference) { mutableStateOf<ImageBitmap?>(null) }
     var failed by remember(reference) { mutableStateOf(false) }
     LaunchedEffect(reference) {
@@ -129,7 +138,7 @@ fun ProductPhoto(reference: String?, name: String, modifier: Modifier = Modifier
         }
     }
     val image = bitmap
-    if (image != null) Image(image, "Foto de $name", modifier.clip(MaterialTheme.shapes.medium), contentScale = ContentScale.Crop)
+    if (image != null) Image(image, description, modifier.clip(MaterialTheme.shapes.medium), contentScale = contentScale)
     else Surface(modifier, shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant) {
         Box(Modifier.padding(12.dp)) { Text(if (failed) "Foto no disponible" else if (reference == null) "Sin foto" else "Cargando foto…", style = MaterialTheme.typography.bodySmall) }
     }

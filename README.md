@@ -80,3 +80,9 @@ La pestaña Personalizar permite cambiar el nombre del negocio, agregar, reempla
 El logo se importa desde la galería y se guarda localmente como PNG de hasta 640 × 640 píxeles, conservando la transparencia. Se muestra completo, sin recortes, en las cabeceras de las secciones. El nombre, logo y colores se conservan al reiniciar la app. Los catálogos y ventas anteriores se mantienen al cambiar la apariencia.
 
 Descartar cambios recupera la apariencia guardada. Restablecer apariencia prepara los valores originales; es necesario guardar para aplicarlos. Al salir de la pestaña se descartan los cambios que no se hayan guardado.
+
+### Colores de tarjetas, textos y navegación
+
+Personalizar incluye controles independientes para Fondo de las tarjetas, Color de los textos y Barra de navegación. Cada control admite paleta y código hexadecimal. La vista previa muestra una tarjeta y el menú de navegación usando los colores del borrador. Guardar personalización aplica los colores a las secciones de la app y los conserva al reiniciar; Descartar cambios y Restablecer apariencia incluyen estos nuevos ajustes.
+
+Los textos se adaptan por separado al fondo de cada tarjeta, al fondo general y al menú para mantener legibilidad. Las configuraciones guardadas en versiones anteriores siguen siendo compatibles.

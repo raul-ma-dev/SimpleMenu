@@ -35,7 +35,7 @@ fun SalesSection(
         }
     }
     val sales = shop.sales.filter { it.day == selectedDay }
-    Card(Modifier.fillMaxWidth()) {
+    AppCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Total del día")
             Text(money(sales.sumOf { it.total }), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
@@ -59,7 +59,7 @@ fun SalesSection(
     if (sales.isEmpty()) Text("Todavía no hay ventas registradas en esta fecha.")
     sales.asReversed().forEach { sale ->
         key(sale.id) {
-            Card(Modifier.fillMaxWidth()) {
+            AppCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Pedido #${sale.id}", fontWeight = FontWeight.Bold)
                     sale.lines.forEach { Text("${it.quantity} × ${it.name} · ${money(it.cents)} = ${money(it.total)}") }
@@ -118,7 +118,7 @@ private fun SaleEditorDialog(sale: Sale, products: List<Product>, onDismiss: () 
                 Text("Fecha: ${sale.day}")
                 Text("Corrige los artículos, precios o cantidades de esta venta.", style = MaterialTheme.typography.bodySmall)
                 drafts.forEachIndexed { index, draft ->
-                    OutlinedCard(Modifier.fillMaxWidth()) {
+                    AppCard(Modifier.fillMaxWidth(), outlined = true) {
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(value = draft.name, onValueChange = { drafts[index] = draft.copy(name = it.take(80)) }, label = { Text("Artículo") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                             OutlinedTextField(value = draft.price, onValueChange = { drafts[index] = draft.copy(price = it) }, label = { Text("Precio unitario ($)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())

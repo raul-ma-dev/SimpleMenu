@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun NewOrderScreen(
+    appearance: AppAppearance,
     products: List<Product>,
     cart: Map<Long, Int>,
     enabled: Boolean,
@@ -29,11 +30,11 @@ fun NewOrderScreen(
         // The header and order summary never belong to the product scroll container.
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Simple Menu", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                BusinessHeader(appearance, compact = true)
                 Text("Nuevo pedido", style = MaterialTheme.typography.titleMedium)
                 Text("Elige productos y ajusta sus cantidades.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
             }
-            Card(onClick = { showOrder = true }, modifier = Modifier.weight(1f)) {
+            AppCard(onClick = { showOrder = true }, modifier = Modifier.weight(1f)) {
                 Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("Pedido actual", style = MaterialTheme.typography.titleSmall)
                     Text("$quantity artículos", style = MaterialTheme.typography.bodySmall)

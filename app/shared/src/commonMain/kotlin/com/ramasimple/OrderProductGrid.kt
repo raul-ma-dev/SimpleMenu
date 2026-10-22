@@ -21,7 +21,7 @@ fun OrderProductGrid(
 ) {
     AdaptiveProductGrid(products) { product, modifier ->
         val quantity = cart[product.id] ?: 0
-        Card(modifier, border = if (quantity > 0) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null) {
+        AppCard(modifier, border = if (quantity > 0) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null) {
             if (!compact) ProductPhoto(product.photo, product.name, Modifier.fillMaxWidth().aspectRatio(1.3f))
             Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(product.name, fontWeight = FontWeight.Bold, maxLines = 2, minLines = 2, overflow = TextOverflow.Ellipsis)
