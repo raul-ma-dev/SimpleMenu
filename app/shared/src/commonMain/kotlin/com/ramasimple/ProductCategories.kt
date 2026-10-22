@@ -23,7 +23,7 @@ private fun CategoryMenu(label: String, options: List<String>, value: String?, e
 }
 
 @Composable
-fun ProductBrowser(products: List<Product>, content: @Composable (List<Product>) -> Unit) {
+fun ProductBrowser(products: List<Product>, categoryButtons: Boolean = false, content: @Composable (List<Product>) -> Unit) {
     var category by remember { mutableStateOf<String?>(null) }
     var subcategory by remember { mutableStateOf<String?>(null) }
     val categories = products.map { it.category }.distinct().sorted()
@@ -36,12 +36,31 @@ fun ProductBrowser(products: List<Product>, content: @Composable (List<Product>)
     }
     if (products.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            CategoryMenu("Categoría", categories, activeCategory) { category = it; subcategory = null }
-            CategoryMenu("Subcategoría", subcategories, activeSubcategory, activeCategory != null) { subcategory = it }
-            if (activeCategory == null) Text("Elige una categoría para filtrar por subcategoría.", style = MaterialTheme.typography.bodySmall)
+            if (categoryButtons) {
+                Text("Categorías", style = MaterialTheme.typography.titleSmall)
+                CategoryButtons(categories, activeCategory, "Sin categoría") { category = it; subcategory = null }
+                if (activeCategory != null && subcategories.any { it.isNotBlank() }) {
+                    Text("Subcategorías", style = MaterialTheme.typography.titleSmall)
+                    CategoryButtons(subcategories, activeSubcategory, "Sin subcategoría") { subcategory = it }
+                }
+            } else {
+                CategoryMenu("Categoría", categories, activeCategory) { category = it; subcategory = null }
+                CategoryMenu("Subcategoría", subcategories, activeSubcategory, activeCategory != null) { subcategory = it }
+                if (activeCategory == null) Text("Elige una categoría para filtrar por subcategoría.", style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
     content(products.inCategory(activeCategory, activeSubcategory))
+}
+
+@Composable
+private fun CategoryButtons(options: List<String>, selected: String?, emptyLabel: String, onSelect: (String?) -> Unit) {
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(selected = selected == null, onClick = { onSelect(null) }, label = { Text("Todas") })
+        options.forEach { option ->
+            FilterChip(selected = selected == option, onClick = { onSelect(option) }, label = { Text(option.ifBlank { emptyLabel }) })
+        }
+    }
 }
 
 @Composable

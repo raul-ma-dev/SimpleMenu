@@ -19,19 +19,24 @@ import kotlin.uuid.Uuid
 // Store only a relative filename: the iOS sandbox location can change between launches.
 private fun photoFile(reference: String): PlatformFile {
     require(Regex("product-[a-f0-9-]+\\.jpg").matches(reference))
-    return PlatformFile(FileKit.filesDir, reference)
+    return FileKit.filesDir / reference
 }
 
 suspend fun deleteProductPhoto(reference: String?) {
     if (reference != null) withContext(Dispatchers.IO) {
-        runCatching { photoFile(reference).delete(mustExist = false) }
+        try {
+            photoFile(reference).delete(mustExist = false)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+        }
     }
 }
 
 class ProductPhotoEditor(private val scope: CoroutineScope) {
     var photo by mutableStateOf<String?>(null)
         private set
-    var busy by mutableStateOf(false)
+    var busy by mutableStateOf(value = false)
         private set
     var error by mutableStateOf<String?>(null)
         private set
@@ -62,6 +67,7 @@ class ProductPhotoEditor(private val scope: CoroutineScope) {
         scope.launch { deleteProductPhoto(unused) }
     }
     fun pickerFailed() { error = "No se pudo abrir la galería. Intenta de nuevo." }
+
     fun import(file: PlatformFile) {
         val session = generation
         busy = true
@@ -70,7 +76,7 @@ class ProductPhotoEditor(private val scope: CoroutineScope) {
             var created: String? = null
             try {
                 val reference = withContext(Dispatchers.IO) {
-                    require(file.size() <= 20 * 1024 * 1024) { "La foto debe pesar menos de 20 MB." }
+                    require(file.size() <= 20L * 1024 * 1024) { "La foto debe pesar menos de 20 MB." }
                     val bytes = file.readBytes()
                     require(bytes.size <= 20 * 1024 * 1024) { "La foto debe pesar menos de 20 MB." }
                     val compressed = FileKit.compressImage(bytes, quality = 85, maxWidth = 640, maxHeight = 640, imageFormat = ImageFormat.JPEG)
@@ -103,8 +109,9 @@ fun rememberProductPhotoPicker(editor: ProductPhotoEditor, active: Boolean): () 
     val picker = rememberFilePickerLauncher(
         type = FileKitType.Image,
         onError = { editor.pickerFailed() },
-        onResult = { file -> if (active && file != null) editor.import(file) },
-    )
+    ) { file ->
+        if (active && file != null) editor.import(file)
+    }
     return { picker.launch() }
 }
 

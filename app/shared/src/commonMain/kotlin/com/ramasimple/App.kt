@@ -77,28 +77,20 @@ fun App() {
                     1 -> {
                         Text("Nuevo pedido", style = MaterialTheme.typography.headlineSmall)
                         if (shop.products.isEmpty()) Text("Primero agrega productos en la sección Productos.")
-                        ProductBrowser(shop.products) { filtered ->
-                        filtered.forEach { p ->
-                            Card(Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(16.dp)) {
-                                    ProductPhoto(p.photo, p.name, Modifier.fillMaxWidth().height(140.dp))
-                                    Text(p.name, fontWeight = FontWeight.Bold)
-                                    Text(p.categoryLabel(), style = MaterialTheme.typography.bodySmall)
-                                    Text(money(p.cents))
-                                    val quantity = cart[p.id] ?: 0
-                                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                        TextButton(enabled = quantity > 0, onClick = { cart = if (quantity == 1) cart - p.id else cart + (p.id to quantity - 1) }) { Text("−") }
-                                        Text("$quantity", modifier = Modifier.padding(top = 12.dp))
-                                        TextButton(enabled = quantity < 999, onClick = { cart = cart + (p.id to quantity + 1) }) { Text("+") }
-                                    }
-                                    if (quantity > 0) Text("Subtotal: ${money(p.cents * quantity)}")
-                                }
-                            }
+                        val changeQuantity: (Product, Int) -> Unit = { product, quantity ->
+                            cart = if (quantity <= 0) cart - product.id else cart + (product.id to quantity.coerceAtMost(999))
                         }
+                        ProductBrowser(shop.products, categoryButtons = true) { filtered ->
+                            OrderProductGrid(filtered, cart, onQuantityChange = changeQuantity)
                         }
                         if (lines.isNotEmpty()) {
                             Text("Pedido actual", style = MaterialTheme.typography.titleMedium)
-                            lines.forEach { Text("${it.quantity} × ${it.name} · ${money(it.total)}") }
+                            OrderProductGrid(
+                                products = shop.products.filter { (cart[it.id] ?: 0) > 0 },
+                                cart = cart,
+                                compact = true,
+                                onQuantityChange = changeQuantity,
+                            )
                         }
                         Text("${lines.sumOf { it.quantity }} artículos · Total ${money(lines.sumOf { it.total })}", style = MaterialTheme.typography.titleLarge)
                         Button(onClick = { closing = true }, enabled = lines.isNotEmpty() && data != null, modifier = Modifier.fillMaxWidth()) { Text("Cerrar pedido") }

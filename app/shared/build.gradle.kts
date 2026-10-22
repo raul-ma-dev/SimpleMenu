@@ -45,6 +45,7 @@ kotlin {
             implementation(libs.compose.uiTooling)
         }
         commonMain.dependencies {
+            implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs.compose)
             api(project(":core"))
             implementation(libs.compose.runtime)

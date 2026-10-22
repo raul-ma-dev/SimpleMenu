@@ -18,6 +18,19 @@ fun ProductGrid(
     onEdit: (Product) -> Unit,
     onDelete: (Product) -> Unit,
 ) {
+    AdaptiveProductGrid(products) { product, modifier ->
+        ProductTile(
+            product = product,
+            inCart = cart[product.id] != null,
+            onEdit = { onEdit(product) },
+            onDelete = { onDelete(product) },
+            modifier = modifier,
+        )
+    }
+}
+
+@Composable
+fun AdaptiveProductGrid(products: List<Product>, content: @Composable (Product, Modifier) -> Unit) {
     // The screen already scrolls vertically; keep a single scroll container.
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val gap = 12.dp
@@ -27,13 +40,7 @@ fun ProductGrid(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
                     row.forEach { product ->
                         key(product.id) {
-                            ProductTile(
-                                product = product,
-                                inCart = cart[product.id] != null,
-                                onEdit = { onEdit(product) },
-                                onDelete = { onDelete(product) },
-                                modifier = Modifier.weight(1f),
-                            )
+                            content(product, Modifier.weight(1f))
                         }
                     }
                     // An incomplete row keeps the same card width as the other rows.
