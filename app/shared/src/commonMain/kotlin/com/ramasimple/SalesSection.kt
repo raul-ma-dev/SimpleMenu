@@ -24,6 +24,7 @@ fun SalesSection(
     var deleting by remember { mutableStateOf<Sale?>(null) }
     var deleteError by remember { mutableStateOf<String?>(null) }
     var feedback by remember { mutableStateOf<String?>(null) }
+    var format by remember { mutableStateOf(DailyReportFormat.CSV) }
     Text("Ventas por día", style = MaterialTheme.typography.headlineSmall)
     val days = (shop.sales.map { it.day } + today + selectedDay).distinct().sortedDescending()
     var expanded by remember { mutableStateOf(false) }
@@ -39,9 +40,15 @@ fun SalesSection(
             Text("Total del día")
             Text(money(sales.sumOf { it.total }), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Text("${sales.size} pedidos · ${sales.sumOf { s -> s.lines.sumOf { it.quantity } }} artículos")
+            Text("Formato del reporte", style = MaterialTheme.typography.labelLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DailyReportFormat.entries.forEach { option ->
+                    FilterChip(selected = format == option, onClick = { format = option }, enabled = !report.busy, label = { Text(option.name) })
+                }
+            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { report.export(selectedDay, sales) }, enabled = !report.busy && sales.isNotEmpty()) { Text("Exportar día (CSV)") }
-                OutlinedButton(onClick = { report.share(selectedDay, sales) }, enabled = !report.busy && sales.isNotEmpty()) { Text("Compartir día") }
+                Button(onClick = { report.export(selectedDay, sales, format) }, enabled = !report.busy && sales.isNotEmpty()) { Text("Exportar día (${format.name})") }
+                OutlinedButton(onClick = { report.share(selectedDay, sales, format) }, enabled = !report.busy && sales.isNotEmpty()) { Text("Compartir ${format.name}") }
             }
             if (report.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             report.message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }

@@ -17,6 +17,7 @@ logback = "1.6.5"
 material3 = "1.12.0-alpha03"
 
 [libraries]
+androidx-test-runner = { module = "androidx.test:runner", version = "1.7.0" }
 filekit-core = { module = "io.github.vinceglb:filekit-core", version = "0.16.0" }
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version = "0.16.0" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

@@ -39,13 +39,14 @@ Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
 ## Control de ventas
 
-La aplicación incluye tres secciones:
+La aplicación incluye cuatro secciones:
 
 - **Productos:** agrega nombre y precio, edita o elimina productos. Los productos del pedido abierto se bloquean para evitar cambios de precio durante la venta.
 - **Nuevo pedido:** usa + y − para elegir cantidades y confirma con Cerrar pedido. Solo los pedidos confirmados cuentan como ventas.
 - **Ventas:** consulta pedidos y total por fecha. La fecha se toma del dispositivo al confirmar la venta.
+- **Personalizar:** configura el nombre, logo y colores de tu empresa.
 
-Los precios se calculan con centavos enteros. Cada venta conserva el nombre, precio y cantidad originales, aunque cambie el catálogo. Los productos y las ventas se guardan localmente (SharedPreferences en Android y NSUserDefaults en iOS). El pedido abierto permanece en memoria: confirma la venta antes de cerrar la aplicación. No hay sincronización entre dispositivos. Los reportes diarios se pueden exportar y compartir en CSV. Los importes se muestran con el símbolo $.
+Los precios se calculan con centavos enteros. Cada venta conserva el nombre, precio y cantidad originales, aunque cambie el catálogo. Los productos y las ventas se guardan localmente (SharedPreferences en Android y NSUserDefaults en iOS). El pedido abierto permanece en memoria: confirma la venta antes de cerrar la aplicación. No hay sincronización entre dispositivos. Los reportes diarios se pueden exportar y compartir en CSV o PDF. Los importes se muestran con el símbolo $.
 
 Validación Android:
 
@@ -69,4 +70,13 @@ La selección e importación de fotos usa [FileKit](https://github.com/vinceglb/
 
 En Ventas, cada pedido cerrado ofrece Editar y Eliminar. Editar permite corregir nombres, precios y cantidades, quitar artículos o agregar otros del catálogo. Los precios originales se conservan hasta que se cambien explícitamente. Guardar actualiza esa venta en su fecha original y recalcula el total diario; Cancelar descarta el borrador. Eliminar pide confirmación y conserva las demás ventas y el catálogo.
 
-Exportar día (CSV) permite elegir un destino para guardar el reporte de la fecha seleccionada. Compartir día abre el menú nativo para elegir la aplicación y el destinatario. El archivo incluye artículos, cantidades, precios unitarios, subtotales por pedido, número de pedidos y total del día. Los reportes reflejan las ediciones y eliminaciones guardadas antes de exportar. Se usa UTF-8 con BOM para conservar acentos en Excel. Compartir prepara una copia temporal en la caché de la app; la aplicación de destino decide cómo enviarla.
+En Formato del reporte, elige CSV o PDF. Exportar día permite elegir un destino para guardar el reporte de la fecha seleccionada. Compartir abre el menú nativo para elegir la aplicación y el destinatario. El archivo incluye artículos, cantidades, precios unitarios, subtotales por pedido, número de pedidos y total del día. Los reportes reflejan las ediciones y eliminaciones guardadas antes de exportar. El CSV usa UTF-8 con BOM para conservar acentos en Excel. El PDF usa páginas A4, cabecera con fecha, resumen diario, tablas por pedido, saltos de línea en nombres largos y numeración de páginas. Compartir prepara una copia temporal en la caché de la app; la aplicación de destino decide cómo enviarla.
+
+
+### Personalización de la aplicación
+
+La pestaña Personalizar permite cambiar el nombre del negocio, agregar, reemplazar o quitar su logo y elegir color principal, secundario y de fondo. Los colores se pueden seleccionar de una paleta o escribir como códigos #RRGGBB. La vista previa muestra el resultado antes de Guardar personalización. Los tonos se adaptan para mantener contraste de texto; un fondo oscuro también utiliza superficies y texto adecuados.
+
+El logo se importa desde la galería y se guarda localmente como PNG de hasta 640 × 640 píxeles, conservando la transparencia. Se muestra completo, sin recortes, en las cabeceras de las secciones. El nombre, logo y colores se conservan al reiniciar la app. Los catálogos y ventas anteriores se mantienen al cambiar la apariencia.
+
+Descartar cambios recupera la apariencia guardada. Restablecer apariencia prepara los valores originales; es necesario guardar para aplicarlos. Al salir de la pestaña se descartan los cambios que no se hayan guardado.

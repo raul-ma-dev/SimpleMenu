@@ -8,12 +8,19 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberShareFileLauncher
 import kotlinx.coroutines.*
 import kotlin.uuid.Uuid
 
+enum class DailyReportFormat(val extension: String) { CSV("csv"), PDF("pdf") }
+
+internal fun dailyReportBytes(day: String, sales: List<Sale>, format: DailyReportFormat): ByteArray = when (format) {
+    DailyReportFormat.CSV -> dailySalesCsv(day, sales).encodeToByteArray()
+    DailyReportFormat.PDF -> dailySalesPdf(day, sales)
+}
+
 data class DailyReportActions(
     val busy: Boolean,
     val message: String?,
     val error: String?,
-    val export: (String, List<Sale>) -> Unit,
-    val share: (String, List<Sale>) -> Unit,
+    val export: (String, List<Sale>, DailyReportFormat) -> Unit,
+    val share: (String, List<Sale>, DailyReportFormat) -> Unit,
 )
 
 // Native launchers stay in the root composition on both Android and iOS.
@@ -45,21 +52,21 @@ fun rememberDailyReportActions(): DailyReportActions {
     val sharer = rememberShareFileLauncher(onError = { error = "No se pudo abrir el menú para compartir. Puedes exportar el reporte y compartirlo desde Archivos." })
     return DailyReportActions(
         busy, message, error,
-        export = { day, sales ->
+        export = { day, sales, format ->
             if (!busy) {
                 busy = true; error = null; message = null
                 scope.launch {
                     try {
                         // Capture this date and sales before opening the native dialog.
-                        pending = withContext(Dispatchers.Default) { dailySalesCsv(day, sales).encodeToByteArray() }
-                        saver.launch(suggestedName = "ventas-$day", defaultExtension = "csv")
+                        pending = withContext(Dispatchers.Default) { dailyReportBytes(day, sales, format) }
+                        saver.launch(suggestedName = "ventas-$day", defaultExtension = format.extension)
                     } catch (cancelled: CancellationException) {
                         pending = null; busy = false; throw cancelled
                     } catch (_: Exception) { pending = null; busy = false; error = "No se pudo preparar el reporte." }
                 }
             }
         },
-        share = { day, sales ->
+        share = { day, sales, format ->
             if (!busy) {
                 busy = true; error = null; message = null
                 scope.launch {
@@ -68,8 +75,8 @@ fun rememberDailyReportActions(): DailyReportActions {
                             // Leave the cache copy available while the receiving app reads it.
                             val directory = FileKit.cacheDir / "sales-export-${Uuid.random()}"
                             directory.createDirectories()
-                            val report = directory / "ventas-$day.csv"
-                            report.write(dailySalesCsv(day, sales).encodeToByteArray())
+                            val report = directory / "ventas-$day.${format.extension}"
+                            report.write(dailyReportBytes(day, sales, format))
                             report
                         }
                         sharer.launch(file)
