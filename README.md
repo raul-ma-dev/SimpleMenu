@@ -86,3 +86,9 @@ Descartar cambios recupera la apariencia guardada. Restablecer apariencia prepar
 Personalizar incluye controles independientes para Fondo de las tarjetas, Color de los textos y Barra de navegación. Cada control admite paleta y código hexadecimal. La vista previa muestra una tarjeta y el menú de navegación usando los colores del borrador. Guardar personalización aplica los colores a las secciones de la app y los conserva al reiniciar; Descartar cambios y Restablecer apariencia incluyen estos nuevos ajustes.
 
 Los textos se adaptan por separado al fondo de cada tarjeta, al fondo general y al menú para mantener legibilidad. Las configuraciones guardadas en versiones anteriores siguen siendo compatibles.
+
+### Identificadores de la aplicación
+
+El package Kotlin y el applicationId de Android son `com.rama.simplemenu`. Los namespaces de los módulos compartido y core son `com.rama.simplemenu.app.shared` y `com.rama.simplemenu.core`. iOS utiliza `com.rama.simplemenu` como bundle identifier.
+
+Cambiar el applicationId hace que Android instale la aplicación con una identidad distinta a la versión anterior. Los datos locales de una instalación con el identificador anterior no se transfieren automáticamente a esta nueva identidad.

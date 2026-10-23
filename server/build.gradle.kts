@@ -3,10 +3,10 @@ plugins {
     alias(libs.plugins.ktor)
 }
 
-group = "com.ramasimple"
+group = "com.rama.simplemenu"
 version = "1.0.0"
 application {
-    mainClass = "com.ramasimple.ApplicationKt"
+    mainClass = "com.rama.simplemenu.ApplicationKt"
 }
 
 dependencies {

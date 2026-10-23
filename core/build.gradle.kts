@@ -12,7 +12,7 @@ kotlin {
     jvm()
     
     android {
-       namespace = "com.ramasimple.core"
+       namespace = "com.rama.simplemenu.core"
        compileSdk = libs.versions.android.compileSdk.get().toInt()
        minSdk = libs.versions.android.minSdk.get().toInt()
     

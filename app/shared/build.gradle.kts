@@ -19,7 +19,7 @@ kotlin {
     }
     
     android {
-       namespace = "com.ramasimple.app.shared"
+       namespace = "com.rama.simplemenu.app.shared"
        compileSdk = libs.versions.android.compileSdk.get().toInt()
        minSdk = libs.versions.android.minSdk.get().toInt()
     
