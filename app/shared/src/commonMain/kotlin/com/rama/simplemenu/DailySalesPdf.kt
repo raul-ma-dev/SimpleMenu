@@ -10,7 +10,7 @@ internal sealed interface ReportDraw
 internal data class ReportText(val value: String, val x: Float, val y: Float, val size: Float, val bold: Boolean = false, val color: ReportColor = reportInk) : ReportDraw
 internal data class ReportBox(val x: Float, val y: Float, val width: Float, val height: Float, val color: ReportColor) : ReportDraw
 
-expect fun dailySalesPdf(day: String, sales: List<Sale>): ByteArray
+expect fun dailySalesPdf(day: String, sales: List<Sale>, businessName: String = "Simple Menu"): ByteArray
 
 internal fun wrapReportText(text: String, width: Float, measure: (String) -> Float): List<String> {
     val result = mutableListOf<String>()
@@ -35,7 +35,13 @@ internal fun wrapReportText(text: String, width: Float, measure: (String) -> Flo
     return result.ifEmpty { listOf("") }
 }
 
-internal fun dailyPdfPages(day: String, sales: List<Sale>, measure: (String, Float, Boolean) -> Float): List<List<ReportDraw>> {
+internal fun dailyPdfPages(day: String, sales: List<Sale>, measure: (String, Float, Boolean) -> Float, businessName: String = "Simple Menu"): List<List<ReportDraw>> {
+    val company = businessName.trim().replace(Regex("\\s+"), " ").ifBlank { "Simple Menu" }
+    fun fitSize(value: String, width: Float, start: Float, bold: Boolean): Float {
+        var size = start
+        while (size > 8f && measure(value, size, bold) > width) size -= .5f
+        return size
+    }
     val daily = sales.filter { it.day == day }.sortedBy { it.id }
     val pages = mutableListOf<MutableList<ReportDraw>>()
     var page = mutableListOf<ReportDraw>()
@@ -48,7 +54,7 @@ internal fun dailyPdfPages(day: String, sales: List<Sale>, measure: (String, Flo
     }
     fun newPage() {
         page = mutableListOf(); pages.add(page)
-        text("Simple Menu", 36f, 30f, 22f, true, reportGreen)
+        text(company, 36f, 30f, fitSize(company, 523f, 22f, true), true, reportGreen)
         text("Ventas del día: $day", 36f, 61f, 11f)
         page.add(ReportBox(36f, 83f, 523f, 1f, reportGreen))
         y = 98f
@@ -76,12 +82,15 @@ internal fun dailyPdfPages(day: String, sales: List<Sale>, measure: (String, Flo
         if (y + 110 > 778f) newPage()
         saleHeader(sale)
         sale.lines.forEachIndexed { lineIndex, line ->
-            val wrapped = wrapReportText(line.name, 255f) { measure(it, 10f, false) }.chunked(32)
+            val details = wrapReportText(line.name, 255f) { measure(it, 10f, false) }.map { it to 10f } +
+                wrapReportText("Categoría: ${line.category?.ifBlank { "Sin categoría" } ?: "Sin categoría"}", 255f) { measure(it, 8f, false) }.map { it to 8f } +
+                wrapReportText("Subcategoría: ${line.subcategory?.ifBlank { "Sin subcategoría" } ?: "Sin subcategoría"}", 255f) { measure(it, 8f, false) }.map { it to 8f }
+            val wrapped = details.chunked(32)
             wrapped.forEachIndexed { partIndex, names ->
                 val height = maxOf(28f, names.size * 14f + 10f)
                 val last = lineIndex == sale.lines.lastIndex && partIndex == wrapped.lastIndex
                 if (y + height + (if (last) 34f else 0f) > 778f) { newPage(); saleHeader(sale, true) }
-                names.forEachIndexed { index, name -> text(name, 44f, y + 5f + index * 14f) }
+                names.forEachIndexed { index, (value, size) -> text(value, 44f, y + 5f + index * 14f, size) }
                 if (partIndex == 0) {
                     right(line.quantity.toString(), 336f, y + 5f)
                     right(money(line.cents), 441f, y + 5f)
@@ -104,8 +113,9 @@ internal fun dailyPdfPages(day: String, sales: List<Sale>, measure: (String, Flo
     }
     pages.forEachIndexed { index, commands ->
         commands.add(ReportBox(36f, 799f, 523f, .5f, reportGreen))
-        commands.add(ReportText("Simple Menu / $day", 36f, 810f, 9f))
         val footer = "Página ${index + 1} de ${pages.size}"
+        val companyFooter = "$company / $day"
+        commands.add(ReportText(companyFooter, 36f, 810f, fitSize(companyFooter, 507f - measure(footer, 9f, false), 9f, false)))
         commands.add(ReportText(footer, 559f - measure(footer, 9f, false), 810f, 9f))
     }
     return pages

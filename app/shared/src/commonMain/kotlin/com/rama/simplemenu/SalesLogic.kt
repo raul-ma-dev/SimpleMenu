@@ -1,14 +1,21 @@
 package com.rama.simplemenu
 
-data class SaleLineDraft(val name: String = "", val price: String = "", val quantity: String = "1") {
+data class SaleLineDraft(val name: String = "", val price: String = "", val quantity: String = "1", val category: String? = null, val subcategory: String? = null) {
     fun toSaleLine(): SaleLine? {
         val cents = parsePrice(price) ?: return null
         val units = quantity.toIntOrNull()?.takeIf { it in 1..999 } ?: return null
-        return name.trim().takeIf { it.isNotEmpty() }?.let { SaleLine(it, cents, units) }
+        return name.trim().takeIf { it.isNotEmpty() }?.let { SaleLine(it, cents, units, category, subcategory) }
     }
 }
 
-fun SaleLine.toDraft() = SaleLineDraft(name, decimalAmount(cents), quantity.toString())
+fun SaleLine.toDraft() = SaleLineDraft(name, decimalAmount(cents), quantity.toString(), category, subcategory)
+
+internal fun salesWithReportCategories(sales: List<Sale>, products: List<Product>): List<Sale> = sales.map { sale ->
+    sale.copy(lines = sale.lines.map { line ->
+        val product = if (line.category == null) products.singleOrNull { it.name.equals(line.name, ignoreCase = true) } else null
+        line.copy(category = line.category ?: product?.category ?: "", subcategory = line.subcategory ?: product?.subcategory ?: "")
+    })
+}
 fun decimalAmount(cents: Long): String = "${cents / 100}.${(cents % 100).toString().padStart(2, '0')}"
 
 fun ShopData.updateSale(sale: Sale): ShopData {

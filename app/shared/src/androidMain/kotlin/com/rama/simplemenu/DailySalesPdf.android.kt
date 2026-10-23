@@ -6,13 +6,13 @@ import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import java.io.ByteArrayOutputStream
 
-actual fun dailySalesPdf(day: String, sales: List<Sale>): ByteArray {
+actual fun dailySalesPdf(day: String, sales: List<Sale>, businessName: String): ByteArray {
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     fun font(size: Float, bold: Boolean) {
         paint.textSize = size
         paint.typeface = Typeface.create("sans-serif", if (bold) Typeface.BOLD else Typeface.NORMAL)
     }
-    val pages = dailyPdfPages(day, sales) { text, size, bold -> font(size, bold); paint.measureText(text) }
+    val pages = dailyPdfPages(day, sales, measure = { text, size, bold -> font(size, bold); paint.measureText(text) }, businessName = businessName)
     val document = PdfDocument()
     try {
         pages.forEachIndexed { index, commands ->

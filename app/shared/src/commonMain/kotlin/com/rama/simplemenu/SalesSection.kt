@@ -133,7 +133,7 @@ private fun SaleEditorDialog(sale: Sale, products: List<Product>, onDismiss: () 
                     DropdownMenu(expanded = catalogExpanded, onDismissRequest = { catalogExpanded = false }) {
                         products.forEach { product ->
                             DropdownMenuItem(text = { Text("${product.name} · ${money(product.cents)}") }, onClick = {
-                                drafts.add(SaleLine(product.name, product.cents, 1).toDraft())
+                                drafts.add(SaleLine(product.name, product.cents, 1, product.category, product.subcategory).toDraft())
                                 catalogExpanded = false
                             })
                         }

@@ -10,9 +10,9 @@ import kotlin.uuid.Uuid
 
 enum class DailyReportFormat(val extension: String) { CSV("csv"), PDF("pdf") }
 
-internal fun dailyReportBytes(day: String, sales: List<Sale>, format: DailyReportFormat): ByteArray = when (format) {
+internal fun dailyReportBytes(day: String, sales: List<Sale>, format: DailyReportFormat, businessName: String = "Simple Menu", products: List<Product> = emptyList()): ByteArray = when (format) {
     DailyReportFormat.CSV -> dailySalesCsv(day, sales).encodeToByteArray()
-    DailyReportFormat.PDF -> dailySalesPdf(day, sales)
+    DailyReportFormat.PDF -> dailySalesPdf(day, salesWithReportCategories(sales, products), businessName)
 }
 
 data class DailyReportActions(
@@ -25,7 +25,7 @@ data class DailyReportActions(
 
 // Native launchers stay in the root composition on both Android and iOS.
 @Composable
-fun rememberDailyReportActions(): DailyReportActions {
+fun rememberDailyReportActions(appearance: AppAppearance, products: List<Product>): DailyReportActions {
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
@@ -58,7 +58,7 @@ fun rememberDailyReportActions(): DailyReportActions {
                 scope.launch {
                     try {
                         // Capture this date and sales before opening the native dialog.
-                        pending = withContext(Dispatchers.Default) { dailyReportBytes(day, sales, format) }
+                        pending = withContext(Dispatchers.Default) { dailyReportBytes(day, sales, format, appearance.businessName, products) }
                         saver.launch(suggestedName = "ventas-$day", defaultExtension = format.extension)
                     } catch (cancelled: CancellationException) {
                         pending = null; busy = false; throw cancelled
@@ -76,7 +76,7 @@ fun rememberDailyReportActions(): DailyReportActions {
                             val directory = FileKit.cacheDir / "sales-export-${Uuid.random()}"
                             directory.createDirectories()
                             val report = directory / "ventas-$day.${format.extension}"
-                            report.write(dailyReportBytes(day, sales, format))
+                            report.write(dailyReportBytes(day, sales, format, appearance.businessName, products))
                             report
                         }
                         sharer.launch(file)

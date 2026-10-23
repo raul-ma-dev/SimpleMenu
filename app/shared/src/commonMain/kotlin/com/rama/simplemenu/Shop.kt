@@ -17,7 +17,7 @@ fun List<Product>.inCategory(category: String?, subcategory: String?): List<Prod
 
 fun Product.categoryLabel(): String = listOf(category.ifBlank { "Sin categoría" }, subcategory)
     .filter { it.isNotBlank() }.joinToString(" / ")
-data class SaleLine(val name: String, val cents: Long, val quantity: Int) {
+data class SaleLine(val name: String, val cents: Long, val quantity: Int, val category: String? = null, val subcategory: String? = null) {
     val total get() = cents * quantity
 }
 data class Sale(val id: Long, val day: String, val lines: List<SaleLine>) {
@@ -65,7 +65,7 @@ fun ShopData.encode(): String = buildList {
     products.forEach { add("P|${it.id}|${it.name.pack()}|${it.cents}|${it.category.pack()}|${it.subcategory.pack()}|${(it.photo ?: "").pack()}") }
     sales.forEach { sale ->
         add("S|${sale.id}|${sale.day}")
-        sale.lines.forEach { add("L|${it.name.pack()}|${it.cents}|${it.quantity}") }
+        sale.lines.forEach { add("L|${it.name.pack()}|${it.cents}|${it.quantity}|${it.category?.pack() ?: "~"}|${it.subcategory?.pack() ?: "~"}") }
     }
 }.joinToString("\n")
 fun decodeShop(text: String): ShopData {
@@ -93,7 +93,11 @@ fun decodeShop(text: String): ShopData {
                 p.getOrNull(6)?.unpack()?.takeIf { it.isNotBlank() },
             ))
             "S" -> sales.add(Sale(p[1].toLong(), p[2], emptyList()))
-            "L" -> { val last = sales.removeAt(sales.lastIndex); sales.add(last.copy(lines = last.lines + SaleLine(p[1].unpack(), p[2].toLong(), p[3].toInt()))) }
+            "L" -> { val last = sales.removeAt(sales.lastIndex); sales.add(last.copy(lines = last.lines + SaleLine(
+                p[1].unpack(), p[2].toLong(), p[3].toInt(),
+                p.getOrNull(4)?.takeUnless { it == "~" }?.unpack(),
+                p.getOrNull(5)?.takeUnless { it == "~" }?.unpack(),
+            ))) }
             else -> error("Formato de datos desconocido")
         }
     }

@@ -92,3 +92,7 @@ Los textos se adaptan por separado al fondo de cada tarjeta, al fondo general y 
 El package Kotlin y el applicationId de Android son `com.rama.simplemenu`. Los namespaces de los módulos compartido y core son `com.rama.simplemenu.app.shared` y `com.rama.simplemenu.core`. iOS utiliza `com.rama.simplemenu` como bundle identifier.
 
 Cambiar el applicationId hace que Android instale la aplicación con una identidad distinta a la versión anterior. Los datos locales de una instalación con el identificador anterior no se transfieren automáticamente a esta nueva identidad.
+
+### Nombre y clasificación en el PDF
+
+El encabezado y pie del PDF utilizan el nombre del negocio guardado en Personalizar. Cada artículo muestra su categoría y subcategoría debajo del nombre. Las ventas nuevas conservan la clasificación vigente al cerrar el pedido; editar cantidades o precios mantiene esa clasificación. En las ventas de versiones anteriores, el reporte busca la clasificación por nombre en el catálogo actual. Si el producto ya no existe o no está clasificado, se muestra Sin categoría / Sin subcategoría.

@@ -3,6 +3,24 @@ package com.rama.simplemenu
 import kotlin.test.*
 
 class DailySalesPdfTest {
+    @Test fun reportUsesBusinessNameAndHistoricalCategories() {
+        val line = SaleLine("Café", 2500, 2, "Bebidas", "Calientes")
+        val pages = dailyPdfPages("2026-10-21", listOf(Sale(1, "2026-10-21", listOf(line))), measure, businessName = "Café de María")
+        val texts = pages.flatten().filterIsInstance<ReportText>().map { it.value }
+        assertTrue("Café de María" in texts)
+        assertTrue("Café de María / 2026-10-21" in texts)
+        assertTrue("Categoría: Bebidas" in texts)
+        assertTrue("Subcategoría: Calientes" in texts)
+        assertFalse(texts.any { "Simple Menu" in it })
+    }
+
+    @Test fun longBusinessNamesFitWithinTheHeader() {
+        val company = "W".repeat(40)
+        val pages = dailyPdfPages("2026-10-21", emptyList(), measure, businessName = company)
+        val title = pages.first().filterIsInstance<ReportText>().first { it.value == company }
+        assertTrue(title.x + measure(title.value, title.size, title.bold) <= REPORT_WIDTH - 36)
+    }
+
     private val measure: (String, Float, Boolean) -> Float = { text, size, _ -> text.length * size * .6f }
 
     @Test fun pdfContainsOnlyTheSelectedDayAndCorrectTotals() {

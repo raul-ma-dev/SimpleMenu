@@ -3,6 +3,26 @@ package com.rama.simplemenu
 import kotlin.test.*
 
 class SalesLogicTest {
+    @Test fun reportCategoriesUseSnapshotsAndFallbackForLegacySales() {
+        val products = listOf(Product(1, "Café", 3000, "Nueva categoría", "Nueva subcategoría"))
+        val sale = Sale(1, day, listOf(
+            SaleLine("Café", 2500, 1, "Bebidas", "Calientes"),
+            SaleLine("Café", 2500, 1),
+            SaleLine("Producto eliminado", 1500, 1),
+            SaleLine("Café", 2500, 1, "", ""),
+        ))
+        val lines = salesWithReportCategories(listOf(sale), products).single().lines
+        assertEquals("Bebidas", lines[0].category)
+        assertEquals("Calientes", lines[0].subcategory)
+        assertEquals("Nueva categoría", lines[1].category)
+        assertEquals("Nueva subcategoría", lines[1].subcategory)
+        assertEquals("", lines[2].category)
+        assertEquals("", lines[3].category)
+        val restored = decodeShop(ShopData(sales = listOf(sale)).encode()).sales.single()
+        assertEquals(sale, restored)
+        assertEquals(sale.lines.first(), sale.lines.first().toDraft().toSaleLine())
+    }
+
     private val day = "2026-10-21"
     private val first = Sale(1, day, listOf(SaleLine("Café", 1250, 2)))
     private val second = Sale(2, day, listOf(SaleLine("Pan", 1000, 1)))

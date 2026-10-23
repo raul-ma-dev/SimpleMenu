@@ -10,14 +10,14 @@ import platform.Foundation.NSString
 import platform.UIKit.*
 import platform.posix.memcpy
 
-actual fun dailySalesPdf(day: String, sales: List<Sale>): ByteArray {
+actual fun dailySalesPdf(day: String, sales: List<Sale>, businessName: String): ByteArray {
     fun attributes(size: Float, bold: Boolean, color: ReportColor = reportInk): Map<Any?, Any> = mapOf(
         NSFontAttributeName to if (bold) UIFont.boldSystemFontOfSize(size.toDouble()) else UIFont.systemFontOfSize(size.toDouble()),
         NSForegroundColorAttributeName to UIColor(red = color.red.toDouble(), green = color.green.toDouble(), blue = color.blue.toDouble(), alpha = 1.0),
     )
-    val pages = dailyPdfPages(day, sales) { text, size, bold ->
+    val pages = dailyPdfPages(day, sales, measure = { text, size, bold ->
         (text as NSString).sizeWithAttributes(attributes(size, bold)).useContents { width.toFloat() }
-    }
+    }, businessName = businessName)
     val data = NSMutableData()
     val bounds = CGRectMake(0.0, 0.0, REPORT_WIDTH.toDouble(), REPORT_HEIGHT.toDouble())
     UIGraphicsBeginPDFContextToData(data, bounds, null)

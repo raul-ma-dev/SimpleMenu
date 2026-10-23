@@ -21,7 +21,7 @@ class DailyPdfDeviceTest {
             Sale(3, day, listOf(SaleLine("Chocolate frío ☕", 4200, 2), SaleLine("ProductoConNombreMuyLargo".repeat(8), 999999999, 999))),
             Sale(4, "2026-10-22", listOf(SaleLine("No incluir", 500, 1))),
         )
-        val bytes = dailySalesPdf(day, sales)
+        val bytes = dailySalesPdf(day, salesWithReportCategories(sales, listOf(Product(1, "Café de olla", 2500, "Bebidas", "Calientes"))), "Café y Panadería La Esquina de Doña María")
         assertTrue(bytes.take(5).toByteArray().decodeToString().startsWith("%PDF-"))
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val file = File(context.getExternalFilesDir(null), "daily-pdf-test.pdf")

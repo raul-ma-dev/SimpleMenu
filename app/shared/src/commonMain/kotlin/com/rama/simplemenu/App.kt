@@ -7,13 +7,17 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
 
 @Composable
 fun App() {
-    val storage = rememberShopStorage()
+    val preview = LocalInspectionMode.current
+    val storage = if (preview) remember { PreviewShopStorage() } else rememberShopStorage()
     var error by remember { mutableStateOf<String?>(null) }
     var data by remember { mutableStateOf(runCatching { decodeShop(storage.read()) }.getOrElse {
         error = "No se pudieron leer los datos. Reinicia la app antes de realizar cambios."
@@ -29,10 +33,9 @@ fun App() {
     var notice by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val photoEditor = remember(scope) { ProductPhotoEditor(scope) }
-    val pickPhoto = rememberProductPhotoPicker(photoEditor, showEditor)
+    val pickPhoto: () -> Unit = if (preview) ({}) else rememberProductPhotoPicker(photoEditor, showEditor)
     val logoEditor = remember(scope) { ProductPhotoEditor(scope, logo = true) }
-    val pickLogo = rememberProductPhotoPicker(logoEditor, tab == 3)
-    val dailyReport = rememberDailyReportActions()
+    val pickLogo: () -> Unit = if (preview) ({}) else rememberProductPhotoPicker(logoEditor, tab == 3)
     fun openEditor(product: Product?) {
         editing = product
         photoEditor.open(product?.photo)
@@ -45,7 +48,8 @@ fun App() {
         storage.write(next.encode()); data = next; error = null; true
     } catch (_: Exception) { error = "No se pudieron guardar los cambios. Intenta de nuevo."; false }
     val shop = data ?: ShopData()
-    val lines = shop.products.mapNotNull { p -> cart[p.id]?.takeIf { it > 0 }?.let { SaleLine(p.name, p.cents, it) } }
+    val lines = shop.products.mapNotNull { p -> cart[p.id]?.takeIf { it > 0 }?.let { SaleLine(p.name, p.cents, it, p.category, p.subcategory) } }
+    val dailyReport = if (preview) DailyReportActions(false, null, null, { _, _, _ -> }, { _, _, _ -> }) else rememberDailyReportActions(shop.appearance, shop.products)
     CompositionLocalProvider(LocalAppAppearance provides shop.appearance) {
     MaterialTheme(colorScheme = appearanceColorScheme(shop.appearance)) {
         Scaffold(bottomBar = {
@@ -84,7 +88,7 @@ fun App() {
                         Text("Productos", style = MaterialTheme.typography.headlineSmall)
                         Button(onClick = { openEditor(null) }, enabled = data != null) { Text("Agregar producto") }
                         if (shop.products.isEmpty()) Text("Agrega tu primer producto con su nombre y precio para empezar a vender.")
-                        ProductBrowser(shop.products) { filtered ->
+                        ProductBrowser(shop.products, categoryButtons = true) { filtered ->
                             ProductGrid(
                                 products = filtered,
                                 cart = cart,
@@ -131,7 +135,7 @@ fun App() {
             val subcategories = shop.products.filter { it.category == canonicalCategory }.map { it.subcategory }.filter { it.isNotBlank() }.distinct().sorted()
             val cents = parsePrice(price)
             val duplicate = shop.products.any { it.id != editing?.id && it.name.equals(name.trim(), ignoreCase = true) }
-            AlertDialog(onDismissRequest = { dismissEditor() }, title = { Text(if (editing == null) "Agregar producto" else "Editar producto") }, text = {
+            AlertDialog(onDismissRequest = {}, properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false), title = { Text(if (editing == null) "Agregar producto" else "Editar producto") }, text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = name, onValueChange = { name = it.take(80) }, label = { Text("Nombre") }, singleLine = true)
                     OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Precio ($)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
@@ -168,4 +172,22 @@ fun App() {
         deleting?.let { product -> AlertDialog(onDismissRequest = { deleting = null }, title = { Text("Eliminar producto") }, text = { Text("¿Eliminar ${product.name}? Sus ventas anteriores se conservarán.") }, confirmButton = { TextButton(onClick = { if (save(shop.copy(products = shop.products.filter { it.id != product.id }))) { scope.launch { deleteProductPhoto(product.photo) }; deleting = null } }) { Text("Eliminar") } }, dismissButton = { TextButton(onClick = { deleting = null }) { Text("Cancelar") } }) }
     }
     }
+}
+
+@Preview(name = "SimpleMenu", showBackground = true, widthDp = 390, heightDp = 844)
+@Composable
+fun AppPreview() {
+    App()
+}
+
+// Preview data stays in memory and avoids native storage and file-picker services.
+private class PreviewShopStorage : ShopStorage {
+    private var value = ShopData(products = listOf(
+        Product(1, "Café de olla", 2500, "Bebidas", "Calientes"),
+        Product(2, "Pan dulce", 1800, "Alimentos", "Panadería"),
+    )).encode()
+    override fun read() = value
+    override fun write(value: String) { this.value = value }
+    override fun today() = "2026-01-01"
+    override fun timestamp() = 0L
 }
